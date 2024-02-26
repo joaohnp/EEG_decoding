@@ -1,0 +1,1 @@
+Decoding EEG exemplary data from MNE
