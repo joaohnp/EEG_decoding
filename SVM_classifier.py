@@ -1,6 +1,7 @@
 import numpy as np
-from sklearn.svm import SVC  # Support Vector Classifier
 from sklearn.model_selection import cross_val_score
+from sklearn.svm import SVC  # Support Vector Classifier
+
 
 def SVM_classification(X_train, y_train, X_test, y_test):
     # Initialize the SVM classifier

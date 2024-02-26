@@ -1,8 +1,8 @@
 import numpy as np
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
-
 from sklearn.model_selection import cross_val_score
+from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.models import Sequential
+
 
 def RNN_classification(X_train, X_test, y_train, y_test):
     # Build RNN model

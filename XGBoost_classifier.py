@@ -1,6 +1,7 @@
 import numpy as np
-from xgboost import XGBClassifier
 from sklearn.model_selection import cross_val_score
+from xgboost import XGBClassifier
+
 
 def XGB_classification(X, y):
 # Initialize and train XGBoost

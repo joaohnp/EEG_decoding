@@ -1,30 +1,23 @@
 #%%
-import matplotlib.pyplot as plt
-import numpy as np
+import os
+import pickle
 
+import matplotlib.pyplot as plt
+import mne
+import numpy as np
 from mne import combine_evoked
 from mne.datasets.limo import load_data
 from mne.stats import linear_regression
 from mne.viz import plot_compare_evokeds, plot_events
-from xgboost import XGBClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense
-from tensorflow.keras.utils import to_categorical
-import mne
-from sklearn.model_selection import train_test_split
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-from sklearn.model_selection import cross_val_score
-import numpy as np
-import numpy as np
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.svm import SVC  # Support Vector Classifier
-from sklearn.model_selection import train_test_split, cross_val_score
-import pickle
-import os
+from tensorflow.keras.layers import LSTM, Conv1D, Dense, Flatten, MaxPooling1D
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.utils import to_categorical
+from xgboost import XGBClassifier
+
 #%% Only one subject in this dataset
 subj = 1
 limo_epochs = load_data(subject=subj)
@@ -59,6 +52,7 @@ y = np.concatenate([np.zeros(len(epochs_a)), np.ones(len(epochs_b))])  # Labels
 
 #%% LDA_all channels
 from LDA_classifier import LDA_classification
+
 ch_scores = {}
 for channel in ch_names:
     X = np.concatenate([epochs_a.get_data(picks=channel), epochs_b.get_data(picks=channel)])  # Feature matrix
@@ -78,6 +72,7 @@ with open(filepath, 'wb') as file:
     pickle.dump(ch_scores, file)
 #%% SVM all channels
 from SVM_classifier import SVM_classification
+
 ch_scores = {}
 for channel in ch_names:
     # Concatenate data from two conditions and extract features
@@ -102,6 +97,7 @@ with open(filepath, 'wb') as file:
 
 #%%
 from XGBoost_classifier import XGB_classification
+
 ch_scores = {}
 for channel in ch_names:
     # Concatenate data from two conditions and extract features
@@ -122,15 +118,16 @@ with open(filepath, 'wb') as file:
     # Serialize and write the variable to the file
     pickle.dump(ch_scores, file)
 
+import numpy as np
+from sklearn.model_selection import cross_val_score
+from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.models import Sequential
+
 #%%
 from tensorflow.keras.utils import to_categorical
+
 from RNN_classifier import RNN_classification
 
-import numpy as np
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
-
-from sklearn.model_selection import cross_val_score
 
 def RNN_classification(X_train, X_test, y_train, y_test):
     # Build RNN model
@@ -170,20 +167,22 @@ with open(filepath, 'wb') as file:
     # Serialize and write the variable to the file
     pickle.dump(ch_scores, file)
 
+from tensorflow.keras.layers import Conv1D, Dense, Flatten, MaxPooling1D
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.utils import to_categorical
+
 #%%
 from CNN_classifier import CNN_classification
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense
-from tensorflow.keras.utils import to_categorical
 
 # Assuming X is shaped as (samples, time steps, features) and y is categorical
 y_binary = to_categorical(y)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y_binary, test_size=0.2, random_state=42)
 
+from tensorflow.keras.layers import Conv1D, Dense, Flatten, MaxPooling1D
+
 # Build CNN model
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense
 
 ch_scores = {}
 for channel in ch_names:
@@ -207,3 +206,4 @@ filepath = os.path.join(dir_path, "scores", "CNN.pickle")
 with open(filepath, 'wb') as file:
     # Serialize and write the variable to the file
     pickle.dump(ch_scores, file)
+# %%
