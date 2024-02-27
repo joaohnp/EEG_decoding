@@ -1,31 +1,17 @@
-#%%
+#   %% Imports
 import os
 import pickle
 
 import matplotlib.pyplot as plt
-import mne
 import numpy as np
-from mne import combine_evoked
 from mne.datasets.limo import load_data
-from mne.stats import linear_regression
-from mne.viz import plot_compare_evokeds, plot_events
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC  # Support Vector Classifier
-from tensorflow.keras.layers import LSTM, Conv1D, Dense, Flatten, MaxPooling1D
-from tensorflow.keras.layers.experimental.preprocessing import Normalization
-
-# Build CNN model
-from tensorflow.keras.models import Sequential
+from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
-from xgboost import XGBClassifier
 
-from LDA_classifier import LDA_classification
-from RNN_classifier import RNN_classification
-from SVM_classifier import SVM_classification
-from XGBoost_classifier import XGB_classification
+from ml_models.LDA_classifier import LDA_classification
+from ml_models.RNN_classifier import RNN_classification
+from ml_models.SVM_classifier import SVM_classification
+from ml_models.XGBoost_classifier import XGB_classification
 
 #%% Only one subject in this dataset
 subj = 1
@@ -70,7 +56,7 @@ epochs_a_filtered = epochs_a[epochs_a.metadata['phase-coherence'].
 epochs_b_filtered = epochs_b[epochs_b.metadata['phase-coherence'].
                              between(level_range_start, level_range_end)]
 
-# now we have cropped the highly coherent epochs into two conditions. trying 
+# now we have cropped the highly coherent epochs into two conditions. trying
 # classifiers now:
 #   %% Linear discriminant anaysis (LDA)
 ch_scores = {}
