@@ -41,12 +41,46 @@ limo_epochs["Face/B"].average().plot_joint(
     times=times_ofinterest, title="Evoked response: Face B", ts_args=ts_args
 )
 #%% Getting basic info
-ch_names = limo_epochs.info['ch_names']
+all_ch_names = limo_epochs.info['ch_names']
+bad_ch_names = limo_epochs.info['bads']
+ch_names = [ch for ch in all_ch_names if ch not in bad_ch_names]
+
+
 #%% Plotting all plots from the same electrode
 limo_epochs["Face/A"].plot_image(picks='A20', combine='mean')
 #%%
-epochs_a = limo_epochs["Face/A"]
-epochs_b = limo_epochs["Face/B"]
+epochs_a = limo_epochs["Face/A"].crop(tmin=0, tmax=0.5)
+epochs_b = limo_epochs["Face/B"].crop(tmin=0, tmax=0.5)
+#%%
+phase_coh = limo_epochs.metadata["phase-coherence"]
+# get levels of phase coherence
+levels = sorted(phase_coh.unique())
+# create labels for levels of phase coherence (i.e., 0 - 85%)
+labels = [f"{i:.2f}" for i in np.arange(0.0, 0.90, 0.05)]
+labels_levels_dict = {label: level for label, level in zip(labels, levels)}
+
+epochs_a_filtered = []
+epochs_b_filtered = []
+start = 0.50
+end = 0.85
+
+# Convert these labels to levels
+level_range_start = labels_levels_dict[f"{start:.2f}"]
+level_range_end = labels_levels_dict[f"{end:.2f}"]
+
+# Filter the dataset
+# Assuming your dataset uses 'phase-coherence' as a key for levels
+epochs_a_filtered = epochs_a[epochs_a.metadata['phase-coherence'].between(level_range_start, level_range_end)]
+epochs_b_filtered = epochs_b[epochs_b.metadata['phase-coherence'].between(level_range_start, level_range_end)]
+
+
+
+
+#%%
+
+
+
+# each trial has 201 elements. 
 X = np.concatenate([epochs_a.get_data(picks='A1'), epochs_b.get_data(picks='A1')])  # Feature matrix
 y = np.concatenate([np.zeros(len(epochs_a)), np.ones(len(epochs_b))])  # Labels
 
@@ -55,8 +89,9 @@ from LDA_classifier import LDA_classification
 
 ch_scores = {}
 for channel in ch_names:
-    X = np.concatenate([epochs_a.get_data(picks=channel), epochs_b.get_data(picks=channel)])  # Feature matrix
-    y = np.concatenate([np.zeros(len(epochs_a)), np.ones(len(epochs_b))])  # Labels
+    X = np.concatenate([epochs_a_filtered.get_data(picks=channel),
+                        epochs_b_filtered.get_data(picks=channel)])  # Feature matrix
+    y = np.concatenate([np.zeros(len(epochs_a_filtered)), np.ones(len(epochs_b_filtered))])  # Labels
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     if sum(sum(sum(X_train))) == 0:
         scores=0
@@ -76,8 +111,11 @@ from SVM_classifier import SVM_classification
 ch_scores = {}
 for channel in ch_names:
     # Concatenate data from two conditions and extract features
-    X = np.concatenate([epochs_a.get_data(picks=channel), epochs_b.get_data(picks=channel)])
-    y = np.concatenate([np.zeros(len(epochs_a)), np.ones(len(epochs_b))])
+    X = np.concatenate([epochs_a_filtered.get_data(picks=channel),
+                        epochs_b_filtered.get_data(picks=channel)])
+
+    y = np.concatenate([np.zeros(len(epochs_a_filtered)),
+                        np.ones(len(epochs_b_filtered))])
     X = X.reshape(X.shape[0], -1)
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -101,8 +139,10 @@ from XGBoost_classifier import XGB_classification
 ch_scores = {}
 for channel in ch_names:
     # Concatenate data from two conditions and extract features
-    X = np.concatenate([epochs_a.get_data(picks=channel), epochs_b.get_data(picks=channel)])
-    y = np.concatenate([np.zeros(len(epochs_a)), np.ones(len(epochs_b))])
+    X = np.concatenate([epochs_a_filtered.get_data(picks=channel), 
+                        epochs_b_filtered.get_data(picks=channel)])
+    y = np.concatenate([np.zeros(len(epochs_a_filtered)), 
+                        np.ones(len(epochs_b_filtered))])
     X_flattened = X.reshape(X.shape[0], -1)
 
     if sum(sum(X_train)) == 0:
@@ -117,7 +157,7 @@ filepath = os.path.join(dir_path, "scores", "XGB.pickle")
 with open(filepath, 'wb') as file:
     # Serialize and write the variable to the file
     pickle.dump(ch_scores, file)
-
+#%%
 import numpy as np
 from sklearn.model_selection import cross_val_score
 from tensorflow.keras.layers import LSTM, Dense
@@ -131,9 +171,9 @@ from RNN_classifier import RNN_classification
 
 def RNN_classification(X_train, X_test, y_train, y_test):
     # Build RNN model
-    print(X_train.shape, X_test.shape,y_train.shape, y_test.shape)
+    # print(X_train.shape, X_test.shape,y_train.shape, y_test.shape)
     model = Sequential([
-        LSTM(25, return_sequences=False, input_shape=(X_train.shape[1], X_train.shape[2])),
+        LSTM(50, return_sequences=False, input_shape=(X_train.shape[1], X_train.shape[2])),
         Dense(2, activation='softmax')
     ])
     
@@ -149,8 +189,10 @@ def RNN_classification(X_train, X_test, y_train, y_test):
 ch_scores = {}
 for channel in ch_names:
     # Concatenate data from two conditions and extract features
-    X = np.concatenate([epochs_a.get_data(picks=channel), epochs_b.get_data(picks=channel)])
-    y = np.concatenate([np.zeros(len(epochs_a)), np.ones(len(epochs_b))])
+    X = np.concatenate([epochs_a_filtered.get_data(picks=channel), 
+                        epochs_b_filtered.get_data(picks=channel)])
+    y = np.concatenate([np.zeros(len(epochs_a_filtered)), 
+                        np.ones(len(epochs_b_filtered))])
     y_binary = to_categorical(y)  # Convert labels to binary format for softmax
     X_train, X_test, y_train, y_test = train_test_split(X, y_binary, test_size=0.2, random_state=42)
     
@@ -167,32 +209,60 @@ with open(filepath, 'wb') as file:
     # Serialize and write the variable to the file
     pickle.dump(ch_scores, file)
 
-from tensorflow.keras.layers import Conv1D, Dense, Flatten, MaxPooling1D
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.utils import to_categorical
-
 #%%
-from CNN_classifier import CNN_classification
-
-# Assuming X is shaped as (samples, time steps, features) and y is categorical
-y_binary = to_categorical(y)
-
-X_train, X_test, y_train, y_test = train_test_split(X, y_binary, test_size=0.2, random_state=42)
-
+# from CNN_classifier import CNN_classification
+import numpy as np
+from sklearn.model_selection import cross_val_score
+from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.layers import Conv1D, Dense, Flatten, MaxPooling1D
+from tensorflow.keras.layers.experimental.preprocessing import Normalization
 
 # Build CNN model
 from tensorflow.keras.models import Sequential
+from tensorflow.keras.utils import to_categorical
 
+
+def CNN_classification(X_train, X_test, y_train, y_test):
+    input_shape = (1, 126)  # Adjust based on your actual data
+
+    # normalizer = Normalization(axis=-1)  # You might need to adjust the axis depending on your data's shape
+    # normalizer.adapt(X_train)
+    model = Sequential([Normalization(input_shape=input_shape),
+    Conv1D(filters=10, kernel_size=2, activation='relu', padding='same',
+            input_shape=(1, 126)),
+    MaxPooling1D(pool_size=2, padding='same'),
+    Flatten(),
+    Dense(40, activation='relu'),
+    Dense(2, activation='softmax')
+    ])
+
+    model.compile(optimizer='adam', loss='categorical_crossentropy',
+                   metrics=['accuracy'])
+
+    model.fit(X_train, y_train, epochs=10, batch_size=10, validation_split=0.2)
+
+    # Evaluate
+    loss, accuracy = model.evaluate(X_test, y_test)
+    print(f'CNN Accuracy: {accuracy:.2f}')
+
+
+    return accuracy
+
+# Assuming X is your input data with shape (samples, time steps, features)
 ch_scores = {}
 for channel in ch_names:
     # Concatenate data from two conditions and extract features
-    X = np.concatenate([epochs_a.get_data(picks=channel), epochs_b.get_data(picks=channel)])
-    y = np.concatenate([np.zeros(len(epochs_a)), np.ones(len(epochs_b))])
-    # Assuming X is shaped as (samples, time steps, features) and y is categorical
+    X = np.concatenate([epochs_a_filtered.get_data(picks=channel),
+                        epochs_b_filtered.get_data(picks=channel)])
+    y = np.concatenate([np.zeros(len(epochs_a_filtered)), 
+                        np.ones(len(epochs_b_filtered))])
+    n_samples, n_time_steps, n_features = X.shape
+    
     y_binary = to_categorical(y)
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y_binary, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y_binary,
+                                                        test_size=0.2,
+                                                        random_state=42)
 
     if sum(sum(sum(X_train))) == 0:
         scores=0

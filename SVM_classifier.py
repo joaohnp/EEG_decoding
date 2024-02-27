@@ -6,7 +6,7 @@ from sklearn.svm import SVC  # Support Vector Classifier
 def SVM_classification(X_train, y_train, X_test, y_test):
     # Initialize the SVM classifier
     # Kernel can be 'linear', 'poly', 'rbf', 'sigmoid', or a custom kernel function
-    svm_clf = SVC(kernel='linear')
+    svm_clf = SVC(kernel='rbf')
 
     # Train the classifier
     svm_clf.fit(X_train, y_train)
