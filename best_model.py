@@ -6,6 +6,8 @@ import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
+from mne.datasets.limo import load_data
+from mne.viz import plot_compare_evokeds
 
 #   %% Loading all scores
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -97,7 +99,13 @@ for i, (label, color) in enumerate(zip(labels, colors)):
 # Add some text for labels, title, and custom x-axis tick labels, etc.
 ax.set_xlabel('Channel')
 ax.set_ylabel('Scores')
-ax.set_title('Scores by channel and classifier')
+ax.set_title(
+    f'Scores per channel/classifier '
+    f'best LDA = {best_lda:.2f}, '
+    f'best SVM = {best_svm:.2f}, '
+    f'best XGB = {best_xgb:.2f}, '
+    f'best RNN = {best_rnn:.2f}'
+)
 ax.legend()
 
 # Set the position of the x ticks
@@ -106,6 +114,31 @@ plt.xticks(x_positions, ch_names, rotation=45)
 plt.ylim([0.475, 0.67])
 plt.axhline(y = 0.5, color = 'r', linestyle = '--', alpha=0.5)
 plt.show()
+Path_to_save = os.path.join(dir_path, "figures")
+fig.savefig(
+    os.path.join(Path_to_save, "Best_Classifier.pdf"),
+    dpi=300,
+    bbox_inches="tight",
+    pad_inches=0,
+    facecolor=fig.get_facecolor(),
+)
+#   %% Our best predictor is on electro A19
+subj = 1
+limo_epochs = load_data(subject=subj)
+# Create a dictionary containing the evoked responses
+conditions = ["Face/A", "Face/B"]
+evokeds = {condition: limo_epochs[condition].average() for condition in conditions}
 
+# concentrate analysis an occipital electrodes (e.g. B11)
+pick = evokeds["Face/A"].ch_names.index("A19")
+
+# compare evoked responses
+fig3 = plot_compare_evokeds(evokeds, picks=pick, ylim=dict(eeg=(-15, 7.5)))
+fig.savefig(
+    os.path.join(Path_to_save, "Electrode_bestdecoding.pdf"),
+    dpi=300,
+    bbox_inches="tight",
+    pad_inches=0,
+)
 
 # %%

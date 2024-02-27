@@ -19,13 +19,31 @@ limo_epochs = load_data(subject=subj)
 #   %% Plotting topoplot + ERPs, to better grasp the data. 
 ts_args = dict(xlim=(-0.25, 0.5))
 times_ofinterest = [0.09, 0.15, 0.23]
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
-limo_epochs["Face/A"].average().plot_joint(
+fig1 = limo_epochs["Face/A"].average().plot_joint(
     times=times_ofinterest, title="Face A", ts_args=ts_args
 )
-limo_epochs["Face/B"].average().plot_joint(
+Path_to_save = os.path.join(dir_path, "figures")
+fig1.savefig(
+    os.path.join(Path_to_save, "EDA_FaceA.pdf"),
+    dpi=300,
+    bbox_inches="tight",
+    pad_inches=0,
+    facecolor=fig1.get_facecolor(),
+)
+
+fig2 = limo_epochs["Face/B"].average().plot_joint(
     times=times_ofinterest, title="Face B", ts_args=ts_args
 )
+fig2.savefig(
+    os.path.join(Path_to_save, "EDA_FaceB.pdf"),
+    dpi=300,
+    bbox_inches="tight",
+    pad_inches=0,
+    facecolor=fig2.get_facecolor(),
+)
+
 #   %% Grabbing the 'good' channels.
 all_ch_names = limo_epochs.info['ch_names']
 bad_ch_names = limo_epochs.info['bads']
