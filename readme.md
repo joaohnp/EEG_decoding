@@ -57,5 +57,5 @@ Now we can check in detail which decoder worked best in which electrode.
 
 ## Support
 
-For support, email joaohnp@gmail.com or join our Slack channel.
+For support, email joaohnp@gmail.com.
 
